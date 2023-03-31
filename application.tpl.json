@@ -1,0 +1,4 @@
+{
+    "abc": "{{ .PerfectSecret }}",
+    "xyz": "{{ .FooBar }}"
+}
