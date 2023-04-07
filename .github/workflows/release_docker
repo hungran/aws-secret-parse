@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: '15 3 * * *'  # every day at 03:15 (just wanted to avoid midnight)
 jobs:
   push_to_registries:
     name: Build Push & Scan image (ghcr.io)
