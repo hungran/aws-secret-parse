@@ -29,8 +29,8 @@ Output
 ```
 ## Idea
 If you looking this with helm you will need
-- [] Helm chart for creating configmap from template file
-- [] InitContainer for creating outfile under `emptyDir`
+- [ ] Helm chart for creating configmap from template file
+- [ ] InitContainer for creating outfile under `emptyDir`
 
 If you interesting with this!
 
