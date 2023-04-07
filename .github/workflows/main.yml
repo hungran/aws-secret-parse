@@ -37,7 +37,7 @@ jobs:
           file: Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}/:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}_go
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
