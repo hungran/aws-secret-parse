@@ -21,9 +21,9 @@ var (
 )
 
 func validateVars() {
-	secretTagValue = os.Getenv("AWS_SECRET_MANAGER_NAME")
+	secretTagValue = os.Getenv("AWS_SECRET_TAG_VALUE")
 	if len(secretTagValue) == 0 {
-		log.Fatalln("AWS_SECRET_MANAGER_NAME env not set")
+		log.Fatalln("AWS_SECRET_TAG_VALUE env not set")
 	}
 
 	inputTemplateName = os.Getenv("APPLICATION_CONFIG_FILE")
