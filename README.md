@@ -2,6 +2,7 @@
 
 - Retrive secret and generating application's config file for every format from AWS Secret Manager
 - Image using chainguard go image with 0 CVE
+![image](https://user-images.githubusercontent.com/26101787/230541559-f9566bcd-4256-4364-95de-09851bd89f0b.png)
 
 ## Usage & Prerequisite in k8s environment
 - Configmap, AWS Secret Manager tag key `env` and value as input, output is your file format you need (.env, appsetting.json)
