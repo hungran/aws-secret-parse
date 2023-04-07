@@ -30,19 +30,19 @@ jobs:
           images: |
             ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
 
-      - name: Build and push Docker images for Go Source
+      - name: Build and push Docker images
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/go:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}_go
+          tags: ghcr.io//${{ github.repository }}/:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'ghcr.io/${{ github.repository_owner }}/${{ github.repository }}/go:${{ github.sha }}'
+          image-ref: 'ghcr.io//${{ github.repository }}/:${{ github.sha }}'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
