@@ -55,7 +55,7 @@ func listSecretsWithFilter(filter string, sess *session.Session) (map[string]str
 		Filters: []*secretsmanager.Filter{
 			{
 				Key:    aws.String("tag-key"),
-				Values: []*string{aws.String("environment")},
+				Values: []*string{aws.String("env")},
 			},
 			{
 				Key:    aws.String("tag-value"),
