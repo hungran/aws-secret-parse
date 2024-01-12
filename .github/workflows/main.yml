@@ -38,7 +38,15 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
-
+  
+      - name: wolfi-act grype scan
+        uses: wolfi-dev/wolfi-act@main
+        with:
+          packages: grype
+          command: |
+            set -x
+            grype ghcr.io/${{ github.repository }}:${{ github.sha }}
+  
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
