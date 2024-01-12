@@ -46,7 +46,7 @@ jobs:
           debug: 'true'
           command: |
             set -x
-            grype -v -o table -f ghcr.io/${{ github.repository }}:${{ github.sha }}
+             grype -v -f critical -o table ghcr.io/${{ github.repository }}:${{ github.sha }}
   
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
