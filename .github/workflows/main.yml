@@ -43,6 +43,7 @@ jobs:
         uses: wolfi-dev/wolfi-act@main
         with:
           packages: grype
+          debug: 'true'
           command: |
             set -x
             grype ghcr.io/${{ github.repository }}:${{ github.sha }}
