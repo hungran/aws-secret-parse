@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - hungran/hungran
   schedule:
     - cron: '15 3 * * *'  # every day at 03:15 (just wanted to avoid midnight)
 jobs:
