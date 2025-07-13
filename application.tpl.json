@@ -1,4 +1,0 @@
-{
-    "abc": "{{ .PerfectSecret }}",
-    "xyz": "{{ .FooBar }}"
-}

@@ -1,4 +1,5 @@
 {
     "abc": "PerfectSecret_VALUE",
-    "xyz": ""
+    "xyz": "ECMRS_CONFIG_1",
+    "foo": "SAMPLE-Onemore_Perfect"
 }
