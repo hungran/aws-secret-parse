@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"html/template"
 	"os"
 	"time"
@@ -15,7 +17,7 @@ import (
 )
 
 var (
-	secretTagValue    string
+	secretName        string
 	inputTemplateName string
 	outputName        string
 	region            string
@@ -44,9 +46,9 @@ func initConfig() {
 }
 
 func validateConfig() {
-	secretTagValue = viper.GetString("aws-secret-tag-value")
-	if len(secretTagValue) == 0 {
-		logrus.Fatal("aws-secret-tag-value not set (env: AWS_SECRET_TAG_VALUE or flag)")
+	secretName = viper.GetString("aws-secret-name")
+	if len(secretName) == 0 {
+		logrus.Fatal("aws-secret-name not set (env: AWS_SECRET_NAME or flag)")
 	}
 	inputTemplateName = viper.GetString("application-config-file")
 	if len(inputTemplateName) == 0 {
@@ -62,7 +64,7 @@ func validateConfig() {
 	}
 }
 
-func listSecretsWithFilter(filter string, sess *session.Session) (map[string]string, error) {
+func listSecretsWithFilter(name string, sess *session.Session) (map[string]string, error) {
 	// Use a context with timeout to make the list secrets request
 	duration := time.Now().Add(30 * time.Second)
 	ctx, cancel := context.WithDeadline(context.Background(), duration)
@@ -70,48 +72,50 @@ func listSecretsWithFilter(filter string, sess *session.Session) (map[string]str
 	// Create a new Secrets Manager client with the provided session
 	svc := secretsmanager.New(sess)
 
-	// Set up the input for the list secrets request with the specified filter
+	// Set up the input for the list secrets request with the specified name
 	input := &secretsmanager.ListSecretsInput{
 		Filters: []*secretsmanager.Filter{
 			{
-				Key:    aws.String("tag-key"),
-				Values: []*string{aws.String("env")},
-			},
-			{
-				Key:    aws.String("tag-value"),
-				Values: []*string{aws.String(filter)},
+				Key:    aws.String("name"),
+				Values: []*string{aws.String(name)},
 			},
 		},
 	}
 
 	result, err := svc.ListSecretsWithContext(ctx, input)
-
 	if err != nil {
 		logrus.WithError(err).Error("Failed to list secrets from AWS")
 		return nil, err
 	}
 
-	// Create a map of secrets with the secret name as the key and the secret ARN as the value
-	secrets := make(map[string]string)
-
+	// Build a map of secretName -> secretArn
+	secretArns := make(map[string]string)
 	for _, s := range result.SecretList {
-		secrets[*s.Name] = *s.ARN
+		secretArns[*s.Name] = *s.ARN
 	}
+	logrus.WithField("secrets", secretArns).Info("Secrets found")
 
-	// Get the secret values for each secret in the map
-	for secretTagValue, secretArn := range secrets {
+	// Build the template context
+	templateContext := make(map[string]string)
+	for secretName, secretArn := range secretArns {
 		secretValue, err := getSecretValueWithContext(secretArn, svc, ctx)
-
 		if err != nil {
-			logrus.WithFields(logrus.Fields{"secretArn": secretArn, "secretTagValue": secretTagValue}).WithError(err).Error("Failed to get secret value")
+			logrus.WithFields(logrus.Fields{"secretArn": secretArn, "secretName": secretName}).WithError(err).Error("Failed to get secret value")
 			return nil, err
 		}
 
-		secrets[secretTagValue] = secretValue
+		// Try to parse as JSON and merge keys
+		var parsed map[string]interface{}
+		if err := json.Unmarshal([]byte(secretValue), &parsed); err == nil {
+			for k, v := range parsed {
+				templateContext[k] = fmt.Sprintf("%v", v)
+			}
+		} else {
+			templateContext[secretName] = secretValue
+		}
 	}
-
-	// Return the map of secrets with the secret values
-	return secrets, nil
+	logrus.WithField("secrets value:", templateContext).Info("Secrets found")
+	return templateContext, nil
 }
 func getSecretValueWithContext(secretArn string, svc *secretsmanager.SecretsManager, ctx context.Context) (string, error) {
 	// Set up the input for the get secret value request
@@ -170,7 +174,7 @@ func main() {
 			if err != nil {
 				logrus.WithError(err).Fatal("Error creating AWS session")
 			}
-			secrets, err := listSecretsWithFilter(secretTagValue, sess)
+			secrets, err := listSecretsWithFilter(secretName, sess)
 			if err != nil {
 				logrus.WithError(err).Fatal("Error listing secrets with filter")
 			}
@@ -179,20 +183,20 @@ func main() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is empty)")
-	rootCmd.Flags().String("aws-secret-tag-value", "", "AWS secret tag value (env: AWS_SECRET_TAG_VALUE)")
+	rootCmd.Flags().String("aws-secret-name", "", "AWS secret tag value (env: AWS_SECRET_NAME)")
 	rootCmd.Flags().String("application-config-file", "", "Input template file (env: APPLICATION_CONFIG_FILE)")
 	rootCmd.Flags().String("application-config-outfile", "", "Output file (env: APPLICATION_CONFIG_OUTFILE)")
 	rootCmd.Flags().String("aws-region", "", "AWS region (env: AWS_REGION)")
 	rootCmd.Flags().String("log-level", "info", "Log level (debug, info, warn, error, fatal) (env: LOG_LEVEL)")
 
 	viper.BindPFlag("log-level", rootCmd.Flags().Lookup("log-level"))
-	viper.BindPFlag("aws-secret-tag-value", rootCmd.Flags().Lookup("aws-secret-tag-value"))
+	viper.BindPFlag("aws-secret-name", rootCmd.Flags().Lookup("aws-secret-name"))
 	viper.BindPFlag("application-config-file", rootCmd.Flags().Lookup("application-config-file"))
 	viper.BindPFlag("application-config-outfile", rootCmd.Flags().Lookup("application-config-outfile"))
 	viper.BindPFlag("aws-region", rootCmd.Flags().Lookup("aws-region"))
 
 	viper.BindEnv("log-level", "LOG_LEVEL")
-	viper.BindEnv("aws-secret-tag-value", "AWS_SECRET_TAG_VALUE")
+	viper.BindEnv("aws-secret-name", "AWS_SECRET_NAME")
 	viper.BindEnv("application-config-file", "APPLICATION_CONFIG_FILE")
 	viper.BindEnv("application-config-outfile", "APPLICATION_CONFIG_OUTFILE")
 	viper.BindEnv("aws-region", "AWS_REGION")
